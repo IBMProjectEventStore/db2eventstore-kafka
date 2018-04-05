@@ -1,0 +1,17 @@
+*.class
+*.log
+*.DS_Store*
+
+# sbt / IntelliJ specific
+.idea
+target/
+event-stream/target
+kafka-queue/target
+data-load/target
+project/boot/
+project/target
+
+# Spark
+checkpoints/
+spark-warehouse
+tmp
