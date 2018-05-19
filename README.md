@@ -92,7 +92,7 @@ sbt "dataLoad/run -localBroker true -kafkaBroker localhost:9092 -tableName senso
 ### Underlying Json format
 The current format generated for this sample generator is a JSON string, like this:
 ```
-s"""{"table":"${tableName}", "payload":{"id": ${numRec}, "${metadata}": ${metadataId}, "timestamp":${System.currentTimeMillis()}, "value":${value}}}"""
+s"""{"table":"${tableName}", "payload":{"id": ${numRec}, "${metadata}": ${metadataId}, "ts":${System.currentTimeMillis()}, "value":${value}}}"""
 ```
 - numRec is a sequence that will restart at -0- each time the generator is restarted
 
@@ -104,17 +104,17 @@ The table created in the event store follows the format below. It is designed to
 val tableDefinition = TableSchema(tableName, StructType(Array(
   StructField("id", LongType, nullable = false),
   StructField(s"${metadata}", LongType, nullable = false),
-  StructField("timestamp", LongType, nullable = false),
+  StructField("ts", LongType, nullable = false),
   StructField("value", LongType, nullable = false)
 )),
-  shardingColumns = Seq("timestamp", s"${metadata}"),
-  pkColumns = Seq("timestamp", s"${metadata}"))
-val indexDefinition = IndexSpecification("IndexDefinition", tableDefinition, equalColumns = Seq(s"${metadata}"), sortColumns = Seq(SortSpecification("timestamp", ColumnOrder.AscendingNullsLast)), includeColumns = Seq("value"))
+  shardingColumns = Seq("ts", s"${metadata}"),
+  pkColumns = Seq("ts", s"${metadata}"))
+val indexDefinition = IndexSpecification("IndexDefinition", tableDefinition, equalColumns = Seq(s"${metadata}"), sortColumns = Seq(SortSpecification("ts", ColumnOrder.AscendingNullsLast)), includeColumns = Seq("value"))
 ```
 
 ## IBM Db2 Event Store supported queries
 
-Any type of queries could be run against the IBM Db2 Event Store. However, the definition above is such that it will allow for running subsecond range predicate queries (such as the one below), as an index is defined on the timestamp and the metadata columns
+Any type of queries could be run against the IBM Db2 Event Store. However, the definition above is such that it will allow for running subsecond range predicate queries (such as the one below), as an index is defined on the ts and the metadata columns
 ```
-SELECT value, timestamp from ${tableName} where ${metadata}=${metadataId} and timestamp>=${timestampValueinMS} and timestamp<=${timestampValueinMS}
+SELECT value, ts from ${tableName} where ${metadata}=${metadataId} and ts>=${timestampStartValueinMS} and ts<=${timestampEndValueinMS}
 ```
