@@ -1,5 +1,9 @@
 # IBM Db2 Event Store Streaming Connector for Kafka
 
+The IBM Db2 Event Store is an in-memory database optimized for event-driven data processing and analysis. [Download the free developer edition or the enterprise edition](https://www.ibm.com/us-en/marketplace/db2-event-store)
+
+In order to run our Open Source Apache Kafka Connector, follow the steps below:
+
 ## Pre-requisites
 ```
 Install sbt at the version 0.13.16

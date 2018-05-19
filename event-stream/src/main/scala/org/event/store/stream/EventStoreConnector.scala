@@ -66,12 +66,12 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
         val tableDefinition = TableSchema(tableName, StructType(Array(
           StructField("id", LongType, nullable = false),
           StructField(s"${settings.getMetadata()}", LongType, nullable = false),
-          StructField("timestamp", LongType, nullable = false),
+          StructField("ts", LongType, nullable = false),
           StructField("value", LongType, nullable = false)
         )),
-          shardingColumns = Seq("timestamp", s"${settings.getMetadata()}"),
-          pkColumns = Seq("timestamp", s"${settings.getMetadata()}"))
-        val indexDefinition = IndexSpecification("IndexDefinition", tableDefinition, equalColumns = Seq(s"${settings.getMetadata()}"), sortColumns = Seq(SortSpecification("timestamp", ColumnOrder.AscendingNullsLast)), includeColumns = Seq("value"))
+          shardingColumns = Seq("ts", s"${settings.getMetadata()}"),
+          pkColumns = Seq("ts", s"${settings.getMetadata()}"))
+        val indexDefinition = IndexSpecification("IndexDefinition", tableDefinition, equalColumns = Seq(s"${settings.getMetadata()}"), sortColumns = Seq(SortSpecification("ts", ColumnOrder.AscendingNullsLast)), includeColumns = Seq("value"))
         val status = ctx.get.createTableWithIndex(tableDefinition, indexDefinition)
         if (!status.isDefined) {
           this.table = Some(ctx.get.getTable(tableName))
@@ -84,7 +84,7 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
   }
 
   private def generateRow(event: Event): Row = {
-    Row.fromSeq(Seq(event.id, event.metadataId, event.timestamp, event.value))
+    Row.fromSeq(Seq(event.id, event.metadataId, event.ts, event.value))
   }
 
   def parseJSON (message: String): Event = {
@@ -99,7 +99,7 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
         if (!this.tableName.isDefined && "table".equals(fieldName)) {this.tableName = Some(parser.getValueAsString)}
         else if ("id".equals(fieldName)) {event.id = parser.getValueAsLong}
         else if (s"${settings.getMetadata()}".equals(fieldName)) {event.metadataId = parser.getValueAsLong}
-        else if ("timestamp".equals(fieldName)) {event.timestamp = parser.getValueAsLong}
+        else if ("ts".equals(fieldName)) {event.ts = parser.getValueAsLong}
         else if ("value".equals(fieldName)) {event.value = parser.getValueAsLong}
       }
     }
