@@ -10,4 +10,7 @@ class Event () {
   def setMetadataId (metadataId: Long): Unit =  {this.metadataId = metadataId}
   def setTimestamp (ts: Long): Unit =  {this.ts = ts}
   def setValue (value: Long): Unit =  {this.value = value}
+  def print: Unit = { 
+    println(s"""Event is id: ${id}, metatadaId: ${metadataId}, value: ${value}, ts: ${ts}""")
+  }
 }
