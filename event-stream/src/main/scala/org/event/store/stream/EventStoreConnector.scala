@@ -50,6 +50,7 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
   var ctx: Option[EventContext] = createContext()
   var table: Option[ResolvedTableSchema] = None
   var tableName: Option[String] = None
+  var schemaName: Option[String] = None
   val list = new ListBuffer [Row] ()
   val factory = new JsonFactory()
   val batchSize = settings.getBatchSize()
@@ -96,6 +97,7 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
       if (JsonToken.FIELD_NAME.equals(jsonToken)) {
         val fieldName = parser.getCurrentName
         parser.nextToken()
+        schemaName = Some(ConfigurationReader.getEventSchemaName)
         if (!this.tableName.isDefined && "table".equals(fieldName)) {this.tableName = Some(parser.getValueAsString)}
         else if ("id".equals(fieldName)) {event.id = parser.getValueAsLong}
         else if (s"${settings.getMetadata()}".equals(fieldName)) {event.metadataId = parser.getValueAsLong}
@@ -127,7 +129,7 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
     val start = System.currentTimeMillis()
     if (dataSeq.size > 0) {
       try {
-        val future: Future[InsertResult] = ctx.get.batchInsertAsync(tableName, dataSeq, true)
+        val future: Future[InsertResult] = ctx.get.batchInsertAsync(table.get, dataSeq)//tableName, dataSeq, true, schemaName)
         val result: InsertResult = Await.result(future, Duration.Inf)
         if (result.failed) {
           println(s"batch insert was incomplete: $result")
