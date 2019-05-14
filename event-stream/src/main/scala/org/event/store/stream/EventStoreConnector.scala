@@ -20,22 +20,28 @@ object EventStoreConnector {
       ConfigurationReader.setEventPassword(settings.getPassword())
       ConfigurationReader.setConnectionEndpoints(settings.getEventStore())
       ConfigurationReader.setUseFrontendConnectionEndpoints(true)
-      val eventContext: Option[EventContext] = try {
-        val context = EventContext.createDatabase(settings.getDatabase())
-        println(s"""Creating Database ${settings.getDatabase()}""")
-        Some(context)
-      } catch {
-        case e: Throwable => {
-          try {
-            val context = Some(EventContext.getEventContext(settings.getDatabase()))
-            EventContext.openDatabase(settings.getDatabase())
-            println(s"""Opening Database ${settings.getDatabase()}""")
-            context
-          } catch {
-            case e: Throwable => None
-          }
-        }
+
+      // Only set SSL parameters if they are non-empty
+      if( settings.getTrustStoreLocation().nonEmpty ){
+        ConfigurationReader.setSslTrustStoreLocation(settings.getTrustStoreLocation())
+        ConfigurationReader.setSslTrustStorePassword(settings.getTrustStorePassword())
+        ConfigurationReader.setSslKeyStoreLocation(settings.getKeyStoreLocation())
+        ConfigurationReader.setSslKeyStorePassword(settings.getKeyStorePassword())
+        ConfigurationReader.setClientPluginName(settings.getClientPluginName())
+        ConfigurationReader.setClientPlugin(true)
+        ConfigurationReader.setSSLEnabled(true)
       }
+
+      val eventContext: Option[EventContext] = 
+        try {
+          val context = Some(EventContext.getEventContext(settings.getDatabase()))
+          EventContext.openDatabase(settings.getDatabase())
+          println(s"""Opening Database ${settings.getDatabase()}""")
+          context
+        } catch {
+          case e: Throwable => None
+        }
+      
       sys.addShutdownHook {
         EventContext.cleanUp()
       }
@@ -60,7 +66,7 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
       val tables = ctx.get.getNamesOfTables
       for {
         name <- tables
-        if (name == this.tableName.get)
+        if (name == this.schemaName.get.toUpperCase + "." + this.tableName.get.toUpperCase)
       } this.table = Some (ctx.get.getTable(tableName))
 
       if (!this.table.isDefined) {
@@ -78,7 +84,7 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
           this.table = Some(ctx.get.getTable(tableName))
         }
         else {
-          println(s"""Error Creating table ${tableName} with error ${status.get.errStr}""")
+          println(s"""Error Creating table ${schemaName}.${tableName} with error ${status.get.errStr}""")
         }
       }
     }
@@ -97,8 +103,24 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
       if (JsonToken.FIELD_NAME.equals(jsonToken)) {
         val fieldName = parser.getCurrentName
         parser.nextToken()
-        schemaName = Some(ConfigurationReader.getEventSchemaName)
-        if (!this.tableName.isDefined && "table".equals(fieldName)) {this.tableName = Some(parser.getValueAsString)}
+        if (!this.tableName.isDefined && "table".equals(fieldName)) {
+            val tabName = parser.getValueAsString
+            println("Received Tabname = " + tabName )
+            if( tabName.nonEmpty ){
+                val names = tabName.split("""\.""").map(_.trim)
+                if( names.length == 2 ){
+                    this.schemaName = Some(names(0))
+                    this.tableName = Some(names(1))
+                } else if( names.length == 1 ){
+                    this.schemaName = Some(ConfigurationReader.getEventUser)
+                    this.tableName = Some(names(0))
+                } else {
+                    println("Bad tableName input")
+                }
+                ConfigurationReader.setEventSchemaName(this.schemaName.get)
+                println("Working with Tablename = " + this.schemaName.get + "." + this.tableName.get )
+            }
+        }
         else if ("id".equals(fieldName)) {event.id = parser.getValueAsLong}
         else if (s"${settings.getMetadata()}".equals(fieldName)) {event.metadataId = parser.getValueAsLong}
         else if ("ts".equals(fieldName)) {event.ts = parser.getValueAsLong}
@@ -117,19 +139,19 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
         if (this.list.size == batchSize) {
           println(s"""About to flush the list and send the batch to the Db2 Event Store""")
           this.getOrCreateTable(this.tableName.get)
-          writeBatch(this.table.get.tableName, this.list.iterator)
+          writeBatch(this.table.get, this.list.iterator)
           list.clear()
         }
       }
     }
   }
 
-  private def writeBatch(tableName: String, data: Iterator[Row]): Unit = {
+  private def writeBatch(table: ResolvedTableSchema, data: Iterator[Row]): Unit = {
     val dataSeq = data.toIndexedSeq
     val start = System.currentTimeMillis()
     if (dataSeq.size > 0) {
       try {
-        val future: Future[InsertResult] = ctx.get.batchInsertAsync(table.get, dataSeq)//tableName, dataSeq, true, schemaName)
+        val future: Future[InsertResult] = ctx.get.batchInsertAsync(table, dataSeq)
         val result: InsertResult = Await.result(future, Duration.Inf)
         if (result.failed) {
           println(s"batch insert was incomplete: $result")
@@ -139,7 +161,7 @@ class EventStoreConnector(createContext: () => Option[EventContext], settings: E
           printf(s"Error writing to the IBM Db2 Event Store $t")
           ctx = None
       }
-      println(s"Done inserting batch in table $tableName in ${System.currentTimeMillis() - start} ms")
+      println(s"Done inserting batch in table ${table.tableName} in ${System.currentTimeMillis() - start} ms")
     }
   }
 }
