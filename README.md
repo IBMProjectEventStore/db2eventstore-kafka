@@ -3,6 +3,7 @@
 *Questions about this material*? Reach me on Twitter [@Loic Julien](https://twitter.com/loicjulien)
 
 The IBM Db2 Event Store is an in-memory database optimized for event-driven data processing and analysis. [Download the free developer edition or the enterprise edition](https://www.ibm.com/us-en/marketplace/db2-event-store)
+This code is for Event Store 1.1.3.
 
 In order to run our Open Source Apache Kafka Connector, follow the steps below:
 
