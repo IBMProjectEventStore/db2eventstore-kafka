@@ -54,6 +54,11 @@ final object EventKafkaSettings {
     options.addOption("database", true, "String name for the Event Store Database")
     options.addOption("batchSize", true, "Size of the batch to send to the IBM Db2 Event Store")
     options.addOption("metadata", true, "String Name for the metadata: Sensor, ...")
+    options.addOption("trustStoreLocation", true, "String for the trustStoreLocation")
+    options.addOption("trustStorePassword", true, "String for the trustStorePassword")
+    options.addOption("keyStoreLocation", true, "String for the keyStoreLocation")
+    options.addOption("keyStorePassword", true, "String for the keyStorePassword")
+    options.addOption("clientPluginName", true, "String for the clientPluginName")
 
     val parser: CommandLineParser = new BasicParser
     val cmd: CommandLine = parser.parse(options, args)
@@ -69,10 +74,15 @@ final object EventKafkaSettings {
       streamSettings.setDatabase(cmd.getOptionValue("database"))
       streamSettings.setBatchSize(Integer.parseInt(cmd.getOptionValue("batchSize")))
       streamSettings.setMetadata(cmd.getOptionValue("metadata"))
+      streamSettings.setTrustStoreLocation(cmd.getOptionValue("trustStoreLocation"))
+      streamSettings.setTrustStorePassword(cmd.getOptionValue("trustStorePassword"))
+      streamSettings.setKeyStoreLocation(cmd.getOptionValue("keyStoreLocation"))
+      streamSettings.setKeyStorePassword(cmd.getOptionValue("keyStorePassword"))
+      streamSettings.setClientPluginName(cmd.getOptionValue("clientPluginName"))
     }
     catch {
       case e: Exception => {
-        throw new IllegalArgumentException("Issue in passing arguments - Requires -kafkaBroker -topic <> -eventStore <> -user <> -password <> -streamingInterval <> -database <> -batchSize <>")
+        throw new IllegalArgumentException("Issue in passing arguments - Requires -kafkaBroker -topic <> -eventStore <> -user <> -password <> -streamingInterval <> -database <> -batchSize <> -trustStoreLocation <> -trustStorePassword <> -keyStoreLocation <> -keyStorePassword <> -clientPluginName <>")
       }
     }
   }
@@ -97,6 +107,11 @@ class EventKafkaSettings {
   var eventStoreKafkaListenerStreamingInteral = 5000
   var kafkaBatchSize = 1000
   var SensorMaxValue = 100
+  var trustStoreLocation = ""
+  var trustStorePassword = ""
+  var keyStoreLocation = ""
+  var keyStorePassword = ""
+  var clientPluginName = "IBMIAMauth"
 
   def setLocalBroker(localBroker: Boolean): Unit = {this.localBroker = localBroker}
   def setTableName(tableName: String): Unit = {this.tableName = tableName}
@@ -111,6 +126,12 @@ class EventKafkaSettings {
   def setUser(user: String): Unit = {this.user = user}
   def setPassword(password: String): Unit = {this.password = password}
   def setStreamingInterval(streamingInterval: Int): Unit = {this.eventStoreKafkaListenerStreamingInteral = streamingInterval}
+  def setTrustStoreLocation(trustStoreLocation: String): Unit = {this.trustStoreLocation = trustStoreLocation}
+  def setTrustStorePassword(trustStorePassword: String): Unit = {this.trustStorePassword = trustStorePassword}
+  def setKeyStoreLocation(keyStoreLocation: String): Unit = {this.keyStoreLocation = keyStoreLocation}
+  def setKeyStorePassword(keyStorePassword: String): Unit = {this.keyStorePassword = keyStorePassword}
+  def setClientPluginName(clientPluginName: String): Unit = {this.clientPluginName = clientPluginName}
+  
 
   def getLocalBroker(): Boolean = this.localBroker
   def getTableName(): String = this.tableName
@@ -125,4 +146,9 @@ class EventKafkaSettings {
   def getUser(): String = this.user
   def getPassword(): String = this.password
   def getStreamingInterval(): Long = this.eventStoreKafkaListenerStreamingInteral
+  def getTrustStoreLocation(): String  = this.trustStoreLocation
+  def getTrustStorePassword(): String = this.trustStorePassword
+  def getKeyStoreLocation(): String = this.keyStoreLocation
+  def getKeyStorePassword(): String = this.keyStorePassword
+  def getClientPluginName(): String = this.clientPluginName
 }

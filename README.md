@@ -52,7 +52,7 @@ This connector could be run standalone, without the generator described in the s
 Once you have run sbt package assembly, you can run the following command, after updating the eventStore option to point to a running Db2 Event Store service.
 
 ```
-sbt "eventStream/run -localBroker true -kafkaBroker localhost:9092 -topic estopic -eventStore 9.30....:1101,9.30....:1101,9.30....:1101 -database TESTDB -user admin  -password password -metadata sensor -streamingInterval 5000 -batchSize 1000"
+sbt "eventStream/run -localBroker true -kafkaBroker localhost:9092 -topic estopic -eventStore 9.30...:18730;9.30....:1101,9.30....:1101,9.30....:1101 -database TESTDB -user admin  -password password -metadata sensor -streamingInterval 5000 -batchSize 1000 -trustStoreLocation <trustStore file location> -trustStorePassword <trstStore password> -keyStoreLocation <keyStore file location> -keyStorePassword <keyStore password> -clientPluginName <plugin name>"
 ```
 
 *Options*
@@ -66,6 +66,12 @@ sbt "eventStream/run -localBroker true -kafkaBroker localhost:9092 -topic estopi
 - metadata [String]- The type of metadata for this IoT device, for instance "sensor" or "appliance" or "weatherstation"  
 - streamingInterval [Long]- The Long value defining the length of the Apache Spark streaming window, in milliseconds
 - batchSize [Int] - The size of the batch to send to the IBM Db2 Event Store
+- trustStoreLocation [String] - The trust store file location for Event Store SSL connections
+- trustStorePassword [String] - The trust store password for Event Store SSL connections
+- keyStoreLocation [String] - The key store file location for Event Store SSL connections
+- keyStorePassword [String] - The key store password for Event Store SSL connections
+- clientPluginName [String] - The client plugin name for Event Store SSL connections
+
 
 ## Run the Data Generator
 
@@ -84,7 +90,7 @@ sbt "dataLoad/run -localBroker true -kafkaBroker localhost:9092 -tableName senso
 *Options*
 - localBroker [Boolean]- true to use of an internal, single node, Kafka broker. False to use an externally configured Broker
 - kafkaBroker [String]- Location of the Kafka broker, pass in "localhost:9092" for a local setup or the ip:port location for an external setup
-- tableName [String] - The table name that will be created within the IBM Db2 Event Store
+- tableName [String] - The table name that will be created within the IBM Db2 Event Store where you can use the form [<schemaName>.]<table name> when if schemName is not provided the default schemaName will be the userid
 - topic [String]- The Kafka topic to be used for the stream
 - group [String]- The Kafka group to be used for the stream
 - metadata [String]- The type of metadata for this simulated IoT device, for instance "sensor" or "appliance" or "car", ...

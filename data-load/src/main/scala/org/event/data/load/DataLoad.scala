@@ -38,12 +38,14 @@ class DataLoad(settings: EventKafkaSettings) {
   def execute(): Unit = {
 
     var numRec: Long = 1
+    var numRec2: Long = 2
     while (true) {
       val batch = new ListBuffer[Array[Byte]]()
       var count = 0
       while (count < settings.getBatchSize()) {
-        batch += jsonData.getMessage(settings.getTableName(), numRec, settings.getMetadata(), settings.getMetadataId(), rand.nextInt(EventKafkaSettings.MAX_METADATA_VALUE))
+        batch += jsonData.getMessage(settings.getTableName(), numRec, settings.getMetadata(), settings.getMetadataId(), numRec2)
         numRec += 1
+        numRec2 = numRec + 1
         count += 1
       }
       try {
